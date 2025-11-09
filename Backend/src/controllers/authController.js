@@ -69,7 +69,11 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const user = await User.create({ name, email, password, role });
+     // 🔒 Hash password before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({ name, email, password: hashedPassword, role });
     res.status(201).json({
       message: 'User created successfully',
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
@@ -88,6 +92,13 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // 🟨 Add these console logs for debugging
+    // console.log("Email from body:", email);
+    // console.log("Password from body:", password);
+    // console.log("User found:", user.email);
+    // console.log("Hash in DB:", user.password);
+    // console.log("Password match:", await bcrypt.compare(password, user.password));
 
     // compare entered password with hashed password
     const isMatch = await bcrypt.compare(password, user.password);
